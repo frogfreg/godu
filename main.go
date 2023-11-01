@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 )
 
 type fileInfo struct {
@@ -12,10 +15,18 @@ type fileInfo struct {
 	size     int
 }
 
+var errBadDescriptor = errors.New("bad file descriptor")
+
 func getSize(entry string) (int, error) {
-	fi, err := os.Stat(entry)
+	fi, err := os.Lstat(entry)
 	if err != nil {
-		return 0, err
+
+		if errors.Is(err, os.ErrNotExist) {
+			fmt.Printf("Warning: %v\n", err)
+			return 0, nil
+		} else {
+			return 0, err
+		}
 	}
 
 	if !fi.IsDir() {
@@ -26,7 +37,13 @@ func getSize(entry string) (int, error) {
 
 	entries, err := os.ReadDir(entry)
 	if err != nil {
-		return 0, err
+		if errors.Is(err, os.ErrPermission) {
+			fmt.Printf("Warning: %v\n", err)
+		} else if strings.Contains(err.Error(), "bad file descriptor") {
+			return 0, errBadDescriptor
+		} else {
+			return 0, err
+		}
 	}
 
 	for _, e := range entries {
@@ -51,13 +68,18 @@ func showRootInfo(root string) error {
 	for _, de := range dirEntries {
 		name := filepath.Join(root, de.Name())
 		size, err := getSize(name)
+		if err != nil {
+			if errors.Is(err, os.ErrPermission) {
+				fmt.Printf("Warning: %v\n", err)
+			} else if errors.Is(err, errBadDescriptor) {
+				fmt.Printf("Warning: %v\n", err)
+			} else {
+				return err
+			}
+		}
 		fileType := "file"
 		if de.IsDir() {
 			fileType = "dir"
-		}
-
-		if err != nil {
-			return err
 		}
 
 		infoList = append(infoList, fileInfo{
@@ -67,6 +89,10 @@ func showRootInfo(root string) error {
 		})
 	}
 
+	slices.SortFunc(infoList, func(a, b fileInfo) int {
+		return b.size - a.size
+	})
+
 	for _, info := range infoList {
 		fmt.Printf("%v | %v | %v bytes\n", info.name, info.fileType, info.size)
 	}
@@ -75,7 +101,7 @@ func showRootInfo(root string) error {
 }
 
 func main() {
-	if err := showRootInfo("/Users/nyan/Desktop"); err != nil {
+	if err := showRootInfo("/"); err != nil {
 		panic(err)
 	}
 
