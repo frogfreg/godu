@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 )
 
 type fileInfo struct {
@@ -64,30 +65,50 @@ func showRootInfo(root string) error {
 	}
 
 	infoList := []fileInfo{}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	errChan := make(chan error)
 
 	for _, de := range dirEntries {
-		name := filepath.Join(root, de.Name())
-		size, err := getSize(name)
-		if err != nil {
-			if errors.Is(err, os.ErrPermission) {
-				fmt.Printf("Warning: %v\n", err)
-			} else if errors.Is(err, errBadDescriptor) {
-				fmt.Printf("Warning: %v\n", err)
-			} else {
-				return err
+		de := de
+		go func() {
+			wg.Add(1)
+			defer wg.Done()
+			name := filepath.Join(root, de.Name())
+			size, err := getSize(name)
+			if err != nil {
+				if errors.Is(err, os.ErrPermission) {
+					fmt.Printf("Warning: %v\n", err)
+				} else if errors.Is(err, errBadDescriptor) {
+					fmt.Printf("Warning: %v\n", err)
+				} else {
+					errChan <- err
+					return
+				}
 			}
-		}
-		fileType := "file"
-		if de.IsDir() {
-			fileType = "dir"
-		}
+			errChan <- nil
+			fileType := "file"
+			if de.IsDir() {
+				fileType = "dir"
+			}
 
-		infoList = append(infoList, fileInfo{
-			name:     name,
-			fileType: fileType,
-			size:     size,
-		})
+			mu.Lock()
+			infoList = append(infoList, fileInfo{
+				name:     name,
+				fileType: fileType,
+				size:     size,
+			})
+			mu.Unlock()
+		}()
 	}
+
+	for range dirEntries {
+		if err := <-errChan; err != nil {
+			return err
+		}
+	}
+
+	wg.Wait()
 
 	slices.SortFunc(infoList, func(a, b fileInfo) int {
 		return b.size - a.size
