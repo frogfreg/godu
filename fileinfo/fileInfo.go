@@ -72,8 +72,8 @@ func getRootInfo(root string) ([]fileInfo, error) {
 
 	for _, de := range dirEntries {
 		de := de
+		wg.Add(1)
 		go func() {
-			wg.Add(1)
 			defer wg.Done()
 			name := filepath.Join(root, de.Name())
 			size, err := getSize(name)
