@@ -58,13 +58,14 @@ func getSize(entry string) (int, error) {
 	return sum, nil
 }
 
-func showRootInfo(root string) error {
+func getRootInfo(root string) ([]fileInfo, error) {
+	infoList := []fileInfo{}
+
 	dirEntries, err := os.ReadDir(root)
 	if err != nil {
-		return err
+		return infoList, err
 	}
 
-	infoList := []fileInfo{}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	errChan := make(chan error)
@@ -104,7 +105,7 @@ func showRootInfo(root string) error {
 
 	for range dirEntries {
 		if err := <-errChan; err != nil {
-			return err
+			return infoList, err
 		}
 	}
 
@@ -114,9 +115,5 @@ func showRootInfo(root string) error {
 		return b.size - a.size
 	})
 
-	for _, info := range infoList {
-		fmt.Printf("%v | %v | %v bytes\n", info.name, info.fileType, info.size)
-	}
-
-	return nil
+	return infoList, err
 }
