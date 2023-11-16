@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -12,11 +13,12 @@ import (
 
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("240"))
+	BorderForeground(lipgloss.Color("#0CF25D"))
 
 type model struct {
 	table   table.Model
 	loading bool
+	spinner spinner.Model
 }
 
 type finishedFetching table.Model
@@ -26,7 +28,9 @@ func someSlowOperation() tea.Msg {
 	return finishedFetching(getFilledTable())
 }
 
-func (m model) Init() tea.Cmd { return someSlowOperation }
+func (m model) Init() tea.Cmd {
+	return someSlowOperation
+}
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -49,23 +53,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loading = true
 			return m, someSlowOperation
 		}
+
+	default:
+		m.spinner, cmd = m.spinner.Update(m.spinner.Tick())
+		return m, cmd
 	}
 	m.table, cmd = m.table.Update(msg)
+
 	return m, cmd
 }
 
 func (m model) View() string {
 	if m.loading {
-		return "Loading ..."
+		return fmt.Sprintf("Loading %s\n", m.spinner.View())
 	}
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
 func main() {
-	if _, err := tea.NewProgram(model{loading: true}).Run(); err != nil {
+	if _, err := tea.NewProgram(initialModel()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
+}
+
+func initialModel() model {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#0CF25D"))
+	return model{loading: true, spinner: s}
 }
 
 func getFilledTable() table.Model {
