@@ -6,15 +6,15 @@ import (
 )
 
 func TestGetRootInfo(t *testing.T) {
-	expected := []fileInfo{{name: "testfiles/dir1", fileType: "dir", size: 10}, {name: "testfiles/file2.txt", fileType: "file", size: 2}, {name: "testfiles/file1.txt", fileType: "file", size: 1}}
+	expected := []FileInfo{{Name: "testfiles/dir1", FileType: "dir", Size: 10}, {Name: "testfiles/file2.txt", FileType: "file", Size: 2}, {Name: "testfiles/file1.txt", FileType: "file", Size: 1}}
 
 	infoList, err := getRootInfo("testfiles")
 	if err != nil {
 		t.Error(err)
 	}
 
-	if slices.CompareFunc(expected, infoList, func(a, b fileInfo) int {
-		if a.fileType != b.fileType || a.name != b.name || a.size != b.size {
+	if slices.CompareFunc(expected, infoList, func(a, b FileInfo) int {
+		if a.FileType != b.FileType || a.Name != b.Name || a.Size != b.Size {
 			return -1
 		}
 		return 0

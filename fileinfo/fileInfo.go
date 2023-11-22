@@ -10,10 +10,10 @@ import (
 	"sync"
 )
 
-type fileInfo struct {
-	name     string
-	fileType string
-	size     int
+type FileInfo struct {
+	Name     string
+	FileType string
+	Size     int
 }
 
 var errBadDescriptor = errors.New("bad file descriptor")
@@ -58,8 +58,8 @@ func getSize(entry string) (int, error) {
 	return sum, nil
 }
 
-func getRootInfo(root string) ([]fileInfo, error) {
-	infoList := []fileInfo{}
+func getRootInfo(root string) ([]FileInfo, error) {
+	infoList := []FileInfo{}
 
 	dirEntries, err := os.ReadDir(root)
 	if err != nil {
@@ -94,10 +94,10 @@ func getRootInfo(root string) ([]fileInfo, error) {
 			}
 
 			mu.Lock()
-			infoList = append(infoList, fileInfo{
-				name:     name,
-				fileType: fileType,
-				size:     size,
+			infoList = append(infoList, FileInfo{
+				Name:     name,
+				FileType: fileType,
+				Size:     size,
 			})
 			mu.Unlock()
 		}()
@@ -111,8 +111,8 @@ func getRootInfo(root string) ([]fileInfo, error) {
 
 	wg.Wait()
 
-	slices.SortFunc(infoList, func(a, b fileInfo) int {
-		return b.size - a.size
+	slices.SortFunc(infoList, func(a, b FileInfo) int {
+		return b.Size - a.Size
 	})
 
 	return infoList, err
