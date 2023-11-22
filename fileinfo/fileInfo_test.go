@@ -8,7 +8,7 @@ import (
 func TestGetRootInfo(t *testing.T) {
 	expected := []FileInfo{{Name: "testfiles/dir1", FileType: "dir", Size: 10}, {Name: "testfiles/file2.txt", FileType: "file", Size: 2}, {Name: "testfiles/file1.txt", FileType: "file", Size: 1}}
 
-	infoList, err := getRootInfo("testfiles")
+	infoList, err := GetRootInfo("testfiles")
 	if err != nil {
 		t.Error(err)
 	}

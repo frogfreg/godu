@@ -2,7 +2,6 @@ package fileinfo
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -23,7 +22,7 @@ func getSize(entry string) (int, error) {
 	if err != nil {
 
 		if errors.Is(err, os.ErrNotExist) {
-			fmt.Printf("Warning: %v\n", err)
+			// fmt.Printf("Warning: %v\n", err)
 			return 0, nil
 		} else {
 			return 0, err
@@ -39,7 +38,7 @@ func getSize(entry string) (int, error) {
 	entries, err := os.ReadDir(entry)
 	if err != nil {
 		if errors.Is(err, os.ErrPermission) {
-			fmt.Printf("Warning: %v\n", err)
+			// fmt.Printf("Warning: %v\n", err)
 		} else if strings.Contains(err.Error(), "bad file descriptor") {
 			return 0, errBadDescriptor
 		} else {
@@ -58,7 +57,7 @@ func getSize(entry string) (int, error) {
 	return sum, nil
 }
 
-func getRootInfo(root string) ([]FileInfo, error) {
+func GetRootInfo(root string) ([]FileInfo, error) {
 	infoList := []FileInfo{}
 
 	dirEntries, err := os.ReadDir(root)
@@ -79,9 +78,9 @@ func getRootInfo(root string) ([]FileInfo, error) {
 			size, err := getSize(name)
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
-					fmt.Printf("Warning: %v\n", err)
+					// fmt.Printf("Warning: %v\n", err)
 				} else if errors.Is(err, errBadDescriptor) {
-					fmt.Printf("Warning: %v\n", err)
+					// fmt.Printf("Warning: %v\n", err)
 				} else {
 					errChan <- err
 					return
