@@ -13,7 +13,6 @@ import (
 
 type model struct {
 	currentDir    string
-	infoList      []fileinfo.FileInfo
 	loading       bool
 	selectedIndex int
 	err           error
@@ -54,7 +53,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = fir.err
 			return m, tea.Quit
 		}
-		// m.infoList = fir.data
 
 		m.table.SetRows(fileinfo.FileInfosToRow(fir.data))
 	case tea.KeyMsg:
@@ -79,7 +77,7 @@ func (m model) View() string {
 		return "Reading files..."
 	}
 
-	viewString := fmt.Sprintf("Current directory: %q\n\n", m.currentDir)
+	viewString := fmt.Sprintf("Current directory: %q\n", m.currentDir)
 	viewString += baseStyle.Render(m.table.View()) + "\n"
 
 	return viewString
@@ -124,7 +122,6 @@ func main() {
 
 	m := model{
 		currentDir:    cwd,
-		infoList:      []fileinfo.FileInfo{},
 		loading:       true,
 		selectedIndex: 0,
 		table:         getInitialTable(),
