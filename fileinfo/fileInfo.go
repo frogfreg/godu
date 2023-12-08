@@ -2,11 +2,14 @@ package fileinfo
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/charmbracelet/bubbles/table"
 )
 
 type FileInfo struct {
@@ -20,7 +23,6 @@ var errBadDescriptor = errors.New("bad file descriptor")
 func getSize(entry string) (int, error) {
 	fi, err := os.Lstat(entry)
 	if err != nil {
-
 		if errors.Is(err, os.ErrNotExist) {
 			// fmt.Printf("Warning: %v\n", err)
 			return 0, nil
@@ -55,6 +57,14 @@ func getSize(entry string) (int, error) {
 	}
 
 	return sum, nil
+}
+
+func FileInfosToRow(fis []FileInfo) []table.Row {
+	var rows []table.Row
+	for _, fi := range fis {
+		rows = append(rows, []string{filepath.Base(fi.Name), fi.FileType, fmt.Sprintf("%v", fi.Size)})
+	}
+	return rows
 }
 
 func GetRootInfo(root string) ([]FileInfo, error) {

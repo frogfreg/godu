@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/frogfreg/du-test/fileinfo"
 )
@@ -16,6 +16,7 @@ type model struct {
 	loading       bool
 	selectedIndex int
 	err           error
+	table         table.Model
 }
 
 type fileInfoResponse struct {
@@ -24,7 +25,6 @@ type fileInfoResponse struct {
 }
 
 func (m model) Init() tea.Cmd {
-
 	f := func() tea.Msg {
 		var res fileInfoResponse
 		data, err := fileinfo.GetRootInfo(m.currentDir)
@@ -41,7 +41,6 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	switch msg := msg.(type) {
 	case fileInfoResponse:
 		m.loading = false
@@ -50,22 +49,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = fir.err
 			return m, tea.Quit
 		}
-		m.infoList = fir.data
+		// m.infoList = fir.data
+
+		m.table.SetRows(fileinfo.FileInfosToRow(fir.data))
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "up", "k":
-			if m.selectedIndex > 0 {
-				m.selectedIndex--
-			}
-		case "down", "j":
-			if m.selectedIndex < len(m.infoList) {
-				m.selectedIndex++
-			}
 		case "esc", "q", "ctrl+c":
 			return m, tea.Quit
 		}
 
 	}
+
+	m.table, _ = m.table.Update(msg)
 
 	return m, nil
 }
@@ -79,21 +74,8 @@ func (m model) View() string {
 		return "Reading files..."
 	}
 
-	viewString := fmt.Sprintf("current directory %q\n", m.currentDir)
-
-	for i, fi := range m.infoList {
-
-		pad := "   "
-		fiString := fmt.Sprintf("%v | %v | %v bytes\n", filepath.Base(fi.Name), fi.FileType, fi.Size)
-
-		if i == m.selectedIndex {
-			pad = "-> "
-		}
-
-		fiString = pad + fiString
-
-		viewString += fiString
-	}
+	viewString := fmt.Sprintf("Current directory: %q\n\n", m.currentDir)
+	viewString += m.table.View() + "\n"
 
 	return viewString
 }
@@ -108,7 +90,21 @@ func main() {
 		currentDir:    cwd,
 		infoList:      []fileinfo.FileInfo{},
 		loading:       true,
-		selectedIndex: 0}
+		selectedIndex: 0,
+		table: table.New(table.WithColumns(
+			[]table.Column{
+				{Title: "Name", Width: 10},
+				{Title: "Type", Width: 10},
+				{Title: "Size", Width: 10},
+			}),
+			table.WithRows(
+				[]table.Row{
+					{"file1.txt", "file", "1000"},
+					{"file2.txt", "file", "2000"},
+				}),
+			table.WithFocused(true),
+			table.WithHeight(10)),
+	}
 
 	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
