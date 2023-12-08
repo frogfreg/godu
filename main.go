@@ -30,19 +30,7 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 func (m model) Init() tea.Cmd {
-	f := func() tea.Msg {
-		var res fileInfoResponse
-		data, err := fileinfo.GetRootInfo(m.currentDir)
-		if err != nil {
-			res.err = err
-			return res
-		}
-
-		res.data = data
-		return res
-	}
-
-	return f
+	return getFileInfoCmd(m.currentDir)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
