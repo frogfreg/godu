@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -59,6 +60,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc", "q", "ctrl+c":
 			return m, tea.Quit
+		case "enter":
+			m = m.updateCurrentDir(m.table.SelectedRow())
+			return m, getFileInfoCmd(m.currentDir)
 		}
 
 	}
@@ -81,6 +85,29 @@ func (m model) View() string {
 	viewString += baseStyle.Render(m.table.View()) + "\n"
 
 	return viewString
+}
+
+func (m model) updateCurrentDir(row table.Row) model {
+	m.currentDir = filepath.Join(m.currentDir, row[0])
+	m.loading = true
+
+	return m
+}
+
+func getFileInfoCmd(dir string) tea.Cmd {
+	f := func() tea.Msg {
+		var res fileInfoResponse
+		data, err := fileinfo.GetRootInfo(dir)
+		if err != nil {
+			res.err = err
+			return res
+		}
+
+		res.data = data
+		return res
+	}
+
+	return f
 }
 
 func getInitialTable() table.Model {
