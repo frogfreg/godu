@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/frogfreg/du-test/fileinfo"
 )
 
@@ -23,6 +24,10 @@ type fileInfoResponse struct {
 	data []fileinfo.FileInfo
 	err  error
 }
+
+var baseStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("240"))
 
 func (m model) Init() tea.Cmd {
 	f := func() tea.Msg {
@@ -75,9 +80,40 @@ func (m model) View() string {
 	}
 
 	viewString := fmt.Sprintf("Current directory: %q\n\n", m.currentDir)
-	viewString += m.table.View() + "\n"
+	viewString += baseStyle.Render(m.table.View()) + "\n"
 
 	return viewString
+}
+
+func getInitialTable() table.Model {
+	t := table.New(table.WithColumns(
+		[]table.Column{
+			{Title: "Name", Width: 10},
+			{Title: "Type", Width: 10},
+			{Title: "Size", Width: 10},
+		}),
+		table.WithRows(
+			[]table.Row{
+				{"file1.txt", "file", "1000"},
+				{"file2.txt", "file", "2000"},
+			}),
+		table.WithFocused(true),
+		table.WithHeight(10))
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+
+	t.SetStyles(s)
+
+	return t
 }
 
 func main() {
@@ -91,19 +127,7 @@ func main() {
 		infoList:      []fileinfo.FileInfo{},
 		loading:       true,
 		selectedIndex: 0,
-		table: table.New(table.WithColumns(
-			[]table.Column{
-				{Title: "Name", Width: 10},
-				{Title: "Type", Width: 10},
-				{Title: "Size", Width: 10},
-			}),
-			table.WithRows(
-				[]table.Row{
-					{"file1.txt", "file", "1000"},
-					{"file2.txt", "file", "2000"},
-				}),
-			table.WithFocused(true),
-			table.WithHeight(10)),
+		table:         getInitialTable(),
 	}
 
 	p := tea.NewProgram(m)
