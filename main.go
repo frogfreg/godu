@@ -40,7 +40,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		fir := fileInfoResponse(msg)
 		if fir.err != nil {
 			m.err = fir.err
-			return m, tea.Quit
+			log.Fatalf("something went wrong: %v", m.err)
 		}
 
 		m.table.SetRows(fileinfo.FileInfosToRow(fir.data))
@@ -48,8 +48,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc", "q", "ctrl+c":
 			return m, tea.Quit
-		case "enter":
-			m = m.updateCurrentDir(m.table.SelectedRow())
+		case "enter", "right", "l":
+			sr := m.table.SelectedRow()
+			if len(sr) != 0 && sr[1] == "dir" {
+				m = m.updateCurrentDir(m.table.SelectedRow()[0], false)
+				return m, getFileInfoCmd(m.currentDir)
+			}
+		case "left", "h", "backspace":
+			m = m.updateCurrentDir(filepath.Dir(m.currentDir), true)
+
 			return m, getFileInfoCmd(m.currentDir)
 		}
 
@@ -75,10 +82,12 @@ func (m model) View() string {
 	return viewString
 }
 
-func (m model) updateCurrentDir(row table.Row) model {
-	m.currentDir = filepath.Join(m.currentDir, row[0])
+func (m model) updateCurrentDir(dir string, replace bool) model {
+	m.currentDir = filepath.Join(m.currentDir, dir)
+	if replace {
+		m.currentDir = dir
+	}
 	m.loading = true
-
 	return m
 }
 
@@ -132,7 +141,7 @@ func getInitialTable() table.Model {
 func main() {
 	cwd, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		log.Fatalf("something went wrong: %v", err)
 	}
 
 	m := model{
