@@ -8,12 +8,14 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/charmbracelet/bubbles/table"
 )
 
-type fileInfo struct {
-	name     string
-	fileType string
-	size     int
+type FileInfo struct {
+	Name     string
+	FileType string
+	Size     int
 }
 
 var errBadDescriptor = errors.New("bad file descriptor")
@@ -21,9 +23,8 @@ var errBadDescriptor = errors.New("bad file descriptor")
 func getSize(entry string) (int, error) {
 	fi, err := os.Lstat(entry)
 	if err != nil {
-
 		if errors.Is(err, os.ErrNotExist) {
-			fmt.Printf("Warning: %v\n", err)
+			// fmt.Printf("Warning: %v\n", err)
 			return 0, nil
 		} else {
 			return 0, err
@@ -39,7 +40,7 @@ func getSize(entry string) (int, error) {
 	entries, err := os.ReadDir(entry)
 	if err != nil {
 		if errors.Is(err, os.ErrPermission) {
-			fmt.Printf("Warning: %v\n", err)
+			// fmt.Printf("Warning: %v\n", err)
 		} else if strings.Contains(err.Error(), "bad file descriptor") {
 			return 0, errBadDescriptor
 		} else {
@@ -58,8 +59,16 @@ func getSize(entry string) (int, error) {
 	return sum, nil
 }
 
-func getRootInfo(root string) ([]fileInfo, error) {
-	infoList := []fileInfo{}
+func FileInfosToRow(fis []FileInfo) []table.Row {
+	var rows []table.Row
+	for _, fi := range fis {
+		rows = append(rows, []string{filepath.Base(fi.Name), fi.FileType, fmt.Sprintf("%v", fi.Size)})
+	}
+	return rows
+}
+
+func GetRootInfo(root string) ([]FileInfo, error) {
+	infoList := []FileInfo{}
 
 	dirEntries, err := os.ReadDir(root)
 	if err != nil {
@@ -79,9 +88,9 @@ func getRootInfo(root string) ([]fileInfo, error) {
 			size, err := getSize(name)
 			if err != nil {
 				if errors.Is(err, os.ErrPermission) {
-					fmt.Printf("Warning: %v\n", err)
+					// fmt.Printf("Warning: %v\n", err)
 				} else if errors.Is(err, errBadDescriptor) {
-					fmt.Printf("Warning: %v\n", err)
+					// fmt.Printf("Warning: %v\n", err)
 				} else {
 					errChan <- err
 					return
@@ -94,10 +103,10 @@ func getRootInfo(root string) ([]fileInfo, error) {
 			}
 
 			mu.Lock()
-			infoList = append(infoList, fileInfo{
-				name:     name,
-				fileType: fileType,
-				size:     size,
+			infoList = append(infoList, FileInfo{
+				Name:     name,
+				FileType: fileType,
+				Size:     size,
 			})
 			mu.Unlock()
 		}()
@@ -111,8 +120,8 @@ func getRootInfo(root string) ([]fileInfo, error) {
 
 	wg.Wait()
 
-	slices.SortFunc(infoList, func(a, b fileInfo) int {
-		return b.size - a.size
+	slices.SortFunc(infoList, func(a, b FileInfo) int {
+		return b.Size - a.Size
 	})
 
 	return infoList, err
