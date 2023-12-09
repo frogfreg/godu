@@ -115,10 +115,7 @@ func getInitialTable() table.Model {
 			{Title: "Size", Width: 10},
 		}),
 		table.WithRows(
-			[]table.Row{
-				{"file1.txt", "file", "1000"},
-				{"file2.txt", "file", "2000"},
-			}),
+			[]table.Row{}),
 		table.WithFocused(true),
 		table.WithHeight(10))
 
