@@ -50,14 +50,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter", "right", "l":
 			sr := m.table.SelectedRow()
-			if len(sr) != 0 && sr[1] == "dir" {
+			if !m.loading && len(sr) != 0 && sr[1] == "dir" {
 				m = m.updateCurrentDir(m.table.SelectedRow()[0], false)
 				return m, getFileInfoCmd(m.currentDir)
 			}
 		case "left", "h", "backspace":
-			m = m.updateCurrentDir(filepath.Dir(m.currentDir), true)
-
-			return m, getFileInfoCmd(m.currentDir)
+			if !m.loading {
+				m = m.updateCurrentDir(filepath.Dir(m.currentDir), true)
+				return m, getFileInfoCmd(m.currentDir)
+			}
 		}
 
 	}
@@ -110,9 +111,9 @@ func getFileInfoCmd(dir string) tea.Cmd {
 func getInitialTable() table.Model {
 	t := table.New(table.WithColumns(
 		[]table.Column{
-			{Title: "Name", Width: 10},
-			{Title: "Type", Width: 10},
-			{Title: "Size", Width: 10},
+			{Title: "Name", Width: 15},
+			{Title: "Type", Width: 7},
+			{Title: "Size", Width: 15},
 		}),
 		table.WithRows(
 			[]table.Row{}),
