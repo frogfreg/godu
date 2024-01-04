@@ -15,6 +15,8 @@ import (
 type model struct {
 	currentDir    string
 	loading       bool
+	deleting      bool
+	deleteDir     string
 	selectedIndex int
 	err           error
 	table         table.Model
@@ -23,6 +25,10 @@ type model struct {
 type fileInfoResponse struct {
 	data []fileinfo.FileInfo
 	err  error
+}
+
+type deleteResponse struct {
+	err error
 }
 
 var baseStyle = lipgloss.NewStyle().
@@ -44,20 +50,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.table.SetRows(fileinfo.FileInfosToRow(fir.data))
+	case deleteResponse:
+		m.deleting = false
+		m.err = deleteResponse(msg).err
+
+		if m.err != nil {
+			log.Fatalf("something went wrong: %v", m.err)
+		}
+
+		m.loading = true
+		return m, getFileInfoCmd(m.currentDir)
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc", "q", "ctrl+c":
 			return m, tea.Quit
 		case "enter", "right", "l":
 			sr := m.table.SelectedRow()
-			if !m.loading && len(sr) != 0 && sr[1] == "dir" {
+			if !m.loading && !m.deleting && len(sr) != 0 && sr[1] == "dir" {
 				m = m.updateCurrentDir(m.table.SelectedRow()[0], false)
 				return m, getFileInfoCmd(m.currentDir)
 			}
 		case "left", "h", "backspace":
-			if !m.loading {
+			if !m.loading && !m.deleting {
 				m = m.updateCurrentDir(filepath.Dir(m.currentDir), true)
 				return m, getFileInfoCmd(m.currentDir)
+			}
+		case "d":
+			sr := m.table.SelectedRow()
+
+			if !m.loading && !m.deleting && len(sr) != 0 {
+				m.deleting = true
+				m.deleteDir = filepath.Join(m.currentDir, sr[0])
+				return m, deleteCmd(m.deleteDir)
 			}
 		}
 
@@ -71,6 +96,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	if m.err != nil {
 		return m.err.Error()
+	}
+
+	if m.deleting {
+		return fmt.Sprintf("deleting %v...", m.deleteDir)
 	}
 
 	if m.loading {
@@ -90,6 +119,21 @@ func (m model) updateCurrentDir(dir string, replace bool) model {
 	}
 	m.loading = true
 	return m
+}
+
+func deleteCmd(dir string) tea.Cmd {
+	f := func() tea.Msg {
+		var res deleteResponse
+
+		err := os.RemoveAll(dir)
+		if err != nil {
+			res.err = err
+		}
+
+		return res
+	}
+
+	return f
 }
 
 func getFileInfoCmd(dir string) tea.Cmd {
