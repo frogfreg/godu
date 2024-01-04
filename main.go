@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/frogfreg/du-test/fileinfo"
+	"github.com/frogfreg/godu/fileinfo"
 )
 
 type model struct {

@@ -1,4 +1,4 @@
-module github.com/frogfreg/du-test
+module github.com/frogfreg/godu
 
 go 1.21.0
 
