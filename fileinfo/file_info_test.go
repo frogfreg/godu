@@ -1,0 +1,31 @@
+package fileinfo
+
+import (
+	"slices"
+	"testing"
+)
+
+func TestGetRootInfo(t *testing.T) {
+	expected := []FileInfo{{Name: "testdata/dir1", FileType: "dir", Size: 10}, {Name: "testdata/file2.txt", FileType: "file", Size: 2}, {Name: "testdata/file1.txt", FileType: "file", Size: 1}}
+
+	infoList, err := GetRootInfo("testdata")
+	if err != nil {
+		t.Error(err)
+	}
+
+	slices.SortFunc(expected, func(a, b FileInfo) int {
+		return a.Size - b.Size
+	})
+	slices.SortFunc(infoList, func(a, b FileInfo) int {
+		return a.Size - b.Size
+	})
+
+	if slices.CompareFunc(expected, infoList, func(a, b FileInfo) int {
+		if a.FileType != b.FileType || a.Name != b.Name || a.Size != b.Size {
+			return -1
+		}
+		return 0
+	}) != 0 {
+		t.Errorf("slices are not equal. Expected %v, but got %v", expected, infoList)
+	}
+}
