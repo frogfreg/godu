@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
 )
@@ -40,7 +41,11 @@ func getFileInfo(root string, d os.DirEntry) (FileInfo, error) {
 	fi := FileInfo{Name: root, FileType: "dir", Size: 0}
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil && !os.IsPermission(err) {
+		if err != nil {
+			if os.IsPermission(err) || strings.Contains(err.Error(), "bad file descriptor") {
+				return nil
+			}
+
 			return err
 		}
 
@@ -50,6 +55,9 @@ func getFileInfo(root string, d os.DirEntry) (FileInfo, error) {
 
 		info, err := d.Info()
 		if err != nil {
+			if os.IsPermission(err) || strings.Contains(err.Error(), "bad file descriptor") {
+				return nil
+			}
 			return err
 		}
 
