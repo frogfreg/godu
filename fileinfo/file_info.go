@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/charmbracelet/bubbles/table"
 )
@@ -39,7 +40,7 @@ func getFileInfo(root string, d os.DirEntry) (FileInfo, error) {
 	fi := FileInfo{Name: root, FileType: "dir", Size: 0}
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
+		if err != nil && !os.IsPermission(err) {
 			return err
 		}
 
@@ -95,6 +96,10 @@ func GetRootInfo(root string) ([]FileInfo, error) {
 			fis = append(fis, fi)
 		}
 	}
+
+	slices.SortFunc(fis, func(a, b FileInfo) int {
+		return b.Size - a.Size
+	})
 
 	return fis, nil
 }

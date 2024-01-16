@@ -13,13 +13,6 @@ func TestGetRootInfo(t *testing.T) {
 		t.Error(err)
 	}
 
-	slices.SortFunc(expected, func(a, b FileInfo) int {
-		return a.Size - b.Size
-	})
-	slices.SortFunc(infoList, func(a, b FileInfo) int {
-		return a.Size - b.Size
-	})
-
 	if slices.CompareFunc(expected, infoList, func(a, b FileInfo) int {
 		if a.FileType != b.FileType || a.Name != b.Name || a.Size != b.Size {
 			return -1
