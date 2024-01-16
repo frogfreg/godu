@@ -106,7 +106,10 @@ func (m model) View() string {
 		return "Reading files..."
 	}
 
-	viewString := fmt.Sprintf("Current directory: %q\n", m.currentDir)
+	viewString := "Controls:\n"
+	viewString += "d: delete dir/file\nh,left arrow: go up a directory\nl, right arrow, enter: go down selected dir\n"
+	viewString += "j,down arrow: move down\nk,up arrow: move up\n"
+	viewString += fmt.Sprintf("\nCurrent directory: %q\n", m.currentDir)
 	viewString += baseStyle.Render(m.table.View()) + "\n"
 
 	return viewString
