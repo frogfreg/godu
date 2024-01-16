@@ -2,7 +2,4 @@
 
 ## TODO
 
-- [ ] improve filetree traversing
-- [ ] add instructions at the top
-- [ ] add error message 
-- [ ] use human readable format for byte count
+This is not yet faster than the original implementation. I think focus will be set on caching instead
