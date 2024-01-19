@@ -158,7 +158,7 @@ func getFileInfoCmd(dir string) tea.Cmd {
 func getInitialTable() table.Model {
 	t := table.New(table.WithColumns(
 		[]table.Column{
-			{Title: "Name", Width: 15},
+			{Title: "Name", Width: 30},
 			{Title: "Type", Width: 7},
 			{Title: "Size", Width: 15},
 		}),

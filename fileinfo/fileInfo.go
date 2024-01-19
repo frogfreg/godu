@@ -2,7 +2,6 @@ package fileinfo
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -10,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/frogfreg/godu/utilities"
 )
 
 type FileInfo struct {
@@ -62,7 +62,7 @@ func getSize(entry string) (int, error) {
 func FileInfosToRow(fis []FileInfo) []table.Row {
 	var rows []table.Row
 	for _, fi := range fis {
-		rows = append(rows, []string{filepath.Base(fi.Name), fi.FileType, fmt.Sprintf("%v", fi.Size)})
+		rows = append(rows, []string{filepath.Base(fi.Name), fi.FileType, utilities.HumanReadableByteString(fi.Size)})
 	}
 	return rows
 }
