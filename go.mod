@@ -1,6 +1,6 @@
 module github.com/frogfreg/godu
 
-go 1.21.0
+go 1.22.0
 
 require (
 	github.com/charmbracelet/bubbles v0.16.1
