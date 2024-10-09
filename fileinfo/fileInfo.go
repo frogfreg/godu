@@ -18,6 +18,7 @@ type FileInfo struct {
 	FileType string
 	Size     int
 	Children []string
+	Checked  bool
 }
 
 var errBadDescriptor = errors.New("bad file descriptor")
@@ -129,17 +130,19 @@ func GetRootInfo(root string) ([]FileInfo, error) {
 	return infoList, err
 }
 
-func GenerateFileMap(root string) (map[string]FileInfo, error) {
-	fileMap := map[string]FileInfo{root: {Name: root, FileType: "dir", Size: 0}}
-	f := getMapFillerFunc(fileMap)
+func GenerateFileMap(m map[string]FileInfo, root string) (map[string]FileInfo, error) {
+	if m == nil {
+		m = map[string]FileInfo{}
+	}
+	f := getMapFillerFunc(m)
 
 	if walkErr := filepath.WalkDir(root, f); walkErr != nil {
 		return nil, walkErr
 	}
 
-	updateDirSizes(fileMap, root)
+	updateDirSizes(m, root)
 
-	return fileMap, nil
+	return m, nil
 }
 
 func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, err error) error {
@@ -153,6 +156,10 @@ func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, er
 			m[parent] = fi
 		} else {
 			m[parent] = FileInfo{Name: parent, FileType: "dir", Size: 0, Children: []string{path}}
+		}
+
+		if fi, exists := m[path]; exists && fi.Checked {
+			return nil
 		}
 
 		if d.IsDir() {
@@ -171,12 +178,17 @@ func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, er
 func updateDirSizes(m map[string]FileInfo, root string) {
 	fi := m[root]
 	if fi.FileType == "file" {
+		fi.Checked = true
+		m[root] = fi
+	}
+	if fi.Checked {
 		return
 	}
 	for _, c := range fi.Children {
 		updateDirSizes(m, c)
 		fi.Size += m[c].Size
 	}
+	fi.Checked = true
 	m[root] = fi
 }
 

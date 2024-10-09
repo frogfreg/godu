@@ -25,19 +25,19 @@ func TestGetRootInfo(t *testing.T) {
 }
 
 func TestGenerateFileMap(t *testing.T) {
-	m, err := GenerateFileMap("testfiles")
+	m, err := GenerateFileMap(nil, "testfiles")
 	if err != nil {
 		t.Error(err)
 	}
 	expected := map[string]FileInfo{
-		".":                             {Name: ".", FileType: "dir", Size: 0, Children: []string{"testfiles"}},
-		"testfiles":                     {Name: "testfiles", FileType: "dir", Size: 13, Children: []string{"testfiles/dir1", "testfiles/file1.txt", "testfiles/file2.txt"}},
-		"testfiles/dir1":                {Name: "testfiles/dir1", FileType: "dir", Size: 10, Children: []string{"testfiles/dir1/dir2", "testfiles/dir1/file3.txt"}},
-		"testfiles/dir1/dir2":           {Name: "testfiles/dir1/dir2", FileType: "dir", Size: 7, Children: []string{"testfiles/dir1/dir2/file4.txt"}},
-		"testfiles/dir1/dir2/file4.txt": {Name: "testfiles/dir1/dir2/file4.txt", FileType: "file", Size: 7, Children: []string(nil)},
-		"testfiles/dir1/file3.txt":      {Name: "testfiles/dir1/file3.txt", FileType: "file", Size: 3, Children: []string(nil)},
-		"testfiles/file1.txt":           {Name: "testfiles/file1.txt", FileType: "file", Size: 1, Children: []string(nil)},
-		"testfiles/file2.txt":           {Name: "testfiles/file2.txt", FileType: "file", Size: 2, Children: []string(nil)},
+		".":                             {Name: ".", FileType: "dir", Size: 0, Children: []string{"testfiles"}, Checked: false},
+		"testfiles":                     {Name: "testfiles", FileType: "dir", Size: 13, Children: []string{"testfiles/dir1", "testfiles/file1.txt", "testfiles/file2.txt"}, Checked: true},
+		"testfiles/dir1":                {Name: "testfiles/dir1", FileType: "dir", Size: 10, Children: []string{"testfiles/dir1/dir2", "testfiles/dir1/file3.txt"}, Checked: true},
+		"testfiles/dir1/dir2":           {Name: "testfiles/dir1/dir2", FileType: "dir", Size: 7, Children: []string{"testfiles/dir1/dir2/file4.txt"}, Checked: true},
+		"testfiles/dir1/dir2/file4.txt": {Name: "testfiles/dir1/dir2/file4.txt", FileType: "file", Size: 7, Children: []string(nil), Checked: true},
+		"testfiles/dir1/file3.txt":      {Name: "testfiles/dir1/file3.txt", FileType: "file", Size: 3, Children: []string(nil), Checked: true},
+		"testfiles/file1.txt":           {Name: "testfiles/file1.txt", FileType: "file", Size: 1, Children: []string(nil), Checked: true},
+		"testfiles/file2.txt":           {Name: "testfiles/file2.txt", FileType: "file", Size: 2, Children: []string(nil), Checked: true},
 	}
 
 	if !reflect.DeepEqual(m, expected) {
@@ -46,7 +46,7 @@ func TestGenerateFileMap(t *testing.T) {
 }
 
 func TestGetSortedDirs(t *testing.T) {
-	m, err := GenerateFileMap("testfiles")
+	m, err := GenerateFileMap(nil, "testfiles")
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,9 +72,10 @@ func BenchmarkGetRootInfo(b *testing.B) {
 		}
 	}
 }
+
 func BenchmarkGetSortedDirs(b *testing.B) {
 	for range b.N {
-		m, err := GenerateFileMap("testfiles")
+		m, err := GenerateFileMap(nil, "testfiles")
 		if err != nil {
 			b.Error(err)
 		}
