@@ -140,7 +140,7 @@ func deleteCmd(dir string) tea.Cmd {
 }
 
 func getFileInfoCmd(dir string) tea.Cmd {
-	f := func() tea.Msg {
+	return func() tea.Msg {
 		var res fileInfoResponse
 		data, err := fileinfo.GetRootInfo(dir)
 		if err != nil {
@@ -151,8 +151,6 @@ func getFileInfoCmd(dir string) tea.Cmd {
 		res.data = data
 		return res
 	}
-
-	return f
 }
 
 func getInitialTable() table.Model {

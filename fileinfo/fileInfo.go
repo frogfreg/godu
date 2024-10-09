@@ -2,6 +2,7 @@ package fileinfo
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -16,6 +17,7 @@ type FileInfo struct {
 	Name     string
 	FileType string
 	Size     int
+	Children []string
 }
 
 var errBadDescriptor = errors.New("bad file descriptor")
@@ -125,4 +127,41 @@ func GetRootInfo(root string) ([]FileInfo, error) {
 	})
 
 	return infoList, err
+}
+
+func GenerateFileMap(root string) (map[string]FileInfo, error) {
+	fileMap := map[string]FileInfo{root: {Name: root, FileType: "dir", Size: 0}}
+	f := getMapFillerFunc(fileMap)
+
+	if walkErr := filepath.WalkDir(root, f); walkErr != nil {
+		return nil, walkErr
+	}
+
+	return fileMap, nil
+}
+
+func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, err error) error {
+	return func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		parent := filepath.Dir(path)
+		if fi, exists := m[parent]; exists {
+			fi.Children = append(fi.Children, path)
+			m[parent] = fi
+		} else {
+			m[parent] = FileInfo{Name: parent, FileType: "dir", Size: 0, Children: []string{path}}
+		}
+
+		if d.IsDir() {
+			m[path] = FileInfo{Name: path, FileType: "dir", Size: 0}
+		} else {
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
+			m[path] = FileInfo{Name: path, FileType: "file", Size: int(info.Size())}
+		}
+		return nil
+	}
 }

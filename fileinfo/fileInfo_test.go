@@ -22,3 +22,15 @@ func TestGetRootInfo(t *testing.T) {
 		t.Errorf("slices are not equal. Expected %v, but got %v", expected, infoList)
 	}
 }
+
+func TestGenerateFileMap(t *testing.T) {
+	m, err := GenerateFileMap("testfiles")
+	if err != nil {
+		t.Error(err)
+	}
+	for k, v := range m {
+		t.Logf("%v = %#v\n", k, v)
+	}
+
+	t.Error("erring on purpose")
+}
