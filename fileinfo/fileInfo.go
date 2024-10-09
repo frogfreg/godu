@@ -137,6 +137,8 @@ func GenerateFileMap(root string) (map[string]FileInfo, error) {
 		return nil, walkErr
 	}
 
+	updateDirSizes(fileMap, root)
+
 	return fileMap, nil
 }
 
@@ -164,4 +166,30 @@ func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, er
 		}
 		return nil
 	}
+}
+
+func updateDirSizes(m map[string]FileInfo, root string) {
+	fi := m[root]
+	if fi.FileType == "file" {
+		return
+	}
+	for _, c := range fi.Children {
+		updateDirSizes(m, c)
+		fi.Size += m[c].Size
+	}
+	m[root] = fi
+}
+
+func GetSortedDirs(m map[string]FileInfo, root string) []FileInfo {
+	list := []FileInfo{}
+
+	for _, c := range m[root].Children {
+		list = append(list, m[c])
+	}
+
+	slices.SortFunc(list, func(a, b FileInfo) int {
+		return b.Size - a.Size
+	})
+
+	return list
 }
