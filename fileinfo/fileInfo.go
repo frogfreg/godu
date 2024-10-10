@@ -151,7 +151,7 @@ func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, er
 			return err
 		}
 		parent := filepath.Dir(path)
-		if fi, exists := m[parent]; exists {
+		if fi, exists := m[parent]; exists && !fi.Checked {
 			fi.Children = append(fi.Children, path)
 			m[parent] = fi
 		} else {
@@ -204,4 +204,15 @@ func GetSortedDirs(m map[string]FileInfo, root string) []FileInfo {
 	})
 
 	return list
+}
+
+func CleanChildren(m map[string]FileInfo, dir string) {
+	delete(m, dir)
+
+	for path, fi := range m {
+		fi.Children = slices.DeleteFunc(fi.Children, func(item string) bool {
+			return item == dir
+		})
+		m[path] = fi
+	}
 }

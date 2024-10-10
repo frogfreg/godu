@@ -14,6 +14,7 @@ import (
 
 type model struct {
 	currentDir    string
+	fileMap       map[string]fileinfo.FileInfo
 	loading       bool
 	deleting      bool
 	deleteDir     string
@@ -23,8 +24,9 @@ type model struct {
 }
 
 type fileInfoResponse struct {
-	data []fileinfo.FileInfo
-	err  error
+	data    []fileinfo.FileInfo
+	fileMap map[string]fileinfo.FileInfo
+	err     error
 }
 
 type deleteResponse struct {
@@ -36,10 +38,11 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 func (m model) Init() tea.Cmd {
-	return getFileInfoCmd(m.currentDir)
+	return getFileInfoCmd(nil, m.currentDir)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	log.Printf("current dir: %v, fileMap: %#v", m.currentDir, m.fileMap)
 	switch msg := msg.(type) {
 	case fileInfoResponse:
 		m.loading = false
@@ -48,6 +51,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = fir.err
 			log.Fatalf("something went wrong: %v", m.err)
 		}
+		m.fileMap = fir.fileMap
 
 		m.table.SetRows(fileinfo.FileInfosToRow(fir.data))
 	case deleteResponse:
@@ -59,7 +63,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.loading = true
-		return m, getFileInfoCmd(m.currentDir)
+		return m, getFileInfoCmd(m.fileMap, m.currentDir)
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -69,12 +73,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			sr := m.table.SelectedRow()
 			if !m.loading && !m.deleting && len(sr) != 0 && sr[1] == "dir" {
 				m = m.updateCurrentDir(m.table.SelectedRow()[0], false)
-				return m, getFileInfoCmd(m.currentDir)
+				return m, getFileInfoCmd(m.fileMap, m.currentDir)
 			}
 		case "left", "h", "backspace":
 			if !m.loading && !m.deleting {
 				m = m.updateCurrentDir(filepath.Dir(m.currentDir), true)
-				return m, getFileInfoCmd(m.currentDir)
+				return m, getFileInfoCmd(m.fileMap, m.currentDir)
 			}
 		case "d":
 			sr := m.table.SelectedRow()
@@ -82,7 +86,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.loading && !m.deleting && len(sr) != 0 {
 				m.deleting = true
 				m.deleteDir = filepath.Join(m.currentDir, sr[0])
-				return m, deleteCmd(m.deleteDir)
+				return m, deleteCmd(m.fileMap, m.deleteDir)
 			}
 		}
 
@@ -124,7 +128,7 @@ func (m model) updateCurrentDir(dir string, replace bool) model {
 	return m
 }
 
-func deleteCmd(dir string) tea.Cmd {
+func deleteCmd(m map[string]fileinfo.FileInfo, dir string) tea.Cmd {
 	f := func() tea.Msg {
 		var res deleteResponse
 
@@ -133,20 +137,24 @@ func deleteCmd(dir string) tea.Cmd {
 			res.err = err
 		}
 
+		fileinfo.CleanChildren(m, dir)
+
 		return res
 	}
 
 	return f
 }
 
-func getFileInfoCmd(dir string) tea.Cmd {
+func getFileInfoCmd(m map[string]fileinfo.FileInfo, dir string) tea.Cmd {
 	return func() tea.Msg {
 		var res fileInfoResponse
-		data, err := fileinfo.GetRootInfo(dir)
+		fm, err := fileinfo.GenerateFileMap(m, dir)
 		if err != nil {
 			res.err = err
 			return res
 		}
+		data := fileinfo.GetSortedDirs(fm, dir)
+		res.fileMap = fm
 
 		res.data = data
 		return res
@@ -193,6 +201,13 @@ func main() {
 		selectedIndex: 0,
 		table:         getInitialTable(),
 	}
+
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	defer f.Close()
 
 	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
