@@ -160,29 +160,28 @@ func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, er
 				fi.Children = append(fi.Children, path)
 				m[parent] = fi
 			}
-		} else {
-			m[parent] = FileInfo{Name: parent, FileType: "dir", Size: 0, Children: []string{path}}
 		}
 
-		if fi, exists := m[path]; exists && fi.Checked {
+		if _, exists := m[path]; exists {
 			return filepath.SkipDir
 		}
 
 		if d.IsDir() {
 			m[path] = FileInfo{Name: path, FileType: "dir", Size: 0}
-		} else {
-			info, err := d.Info()
-			if err != nil {
-				if errors.Is(err, fs.ErrPermission) {
-					return nil
-				}
-				if errors.Is(err, fs.ErrNotExist) {
-					return nil
-				}
-				return err
-			}
-			m[path] = FileInfo{Name: path, FileType: "file", Size: int(info.Size())}
+			return nil
 		}
+
+		info, err := d.Info()
+		if err != nil {
+			if errors.Is(err, fs.ErrPermission) {
+				return nil
+			}
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		m[path] = FileInfo{Name: path, FileType: "file", Size: int(info.Size())}
 		return nil
 	}
 }

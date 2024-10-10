@@ -30,7 +30,6 @@ func TestGenerateFileMap(t *testing.T) {
 		t.Error(err)
 	}
 	expected := map[string]FileInfo{
-		".":                             {Name: ".", FileType: "dir", Size: 0, Children: []string{"testfiles"}, Checked: false},
 		"testfiles":                     {Name: "testfiles", FileType: "dir", Size: 13, Children: []string{"testfiles/dir1", "testfiles/file1.txt", "testfiles/file2.txt"}, Checked: true},
 		"testfiles/dir1":                {Name: "testfiles/dir1", FileType: "dir", Size: 10, Children: []string{"testfiles/dir1/dir2", "testfiles/dir1/file3.txt"}, Checked: true},
 		"testfiles/dir1/dir2":           {Name: "testfiles/dir1/dir2", FileType: "dir", Size: 7, Children: []string{"testfiles/dir1/dir2/file4.txt"}, Checked: true},
