@@ -148,7 +148,7 @@ func GenerateFileMap(m map[string]FileInfo, root string) (map[string]FileInfo, e
 func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, err error) error {
 	return func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			if errors.Is(err, fs.ErrPermission) && d.IsDir() {
+			if d.IsDir() {
 				return filepath.SkipDir
 			}
 			return err
@@ -171,6 +171,9 @@ func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, er
 			info, err := d.Info()
 			if err != nil {
 				if errors.Is(err, fs.ErrPermission) {
+					return nil
+				}
+				if errors.Is(err, fs.ErrNotExist) {
 					return nil
 				}
 				return err
