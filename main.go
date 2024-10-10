@@ -42,7 +42,6 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	log.Printf("current dir: %v, fileMap: %#v", m.currentDir, m.fileMap)
 	switch msg := msg.(type) {
 	case fileInfoResponse:
 		m.loading = false
@@ -202,12 +201,12 @@ func main() {
 		table:         getInitialTable(),
 	}
 
-	f, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println("fatal:", err)
-		os.Exit(1)
-	}
-	defer f.Close()
+	// f, err := tea.LogToFile("debug.log", "debug")
+	// if err != nil {
+	// 	fmt.Println("fatal:", err)
+	// 	os.Exit(1)
+	// }
+	// defer f.Close()
 
 	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
