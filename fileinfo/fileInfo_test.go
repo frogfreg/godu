@@ -80,7 +80,6 @@ func TestCleanChildren(t *testing.T) {
 	if !reflect.DeepEqual(expected, m) {
 		t.Errorf("expected %v, got %v", expected, m)
 	}
-
 }
 
 func BenchmarkGetRootInfo(b *testing.B) {

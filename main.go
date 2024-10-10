@@ -201,7 +201,7 @@ func main() {
 		table:         getInitialTable(),
 	}
 
-	// f, err := tea.LogToFile("debug.log", "debug")
+	// f, err := tea.LogToFile("/home/nyan/Desktop/experiments/godu/debug.log", "debug")
 	// if err != nil {
 	// 	fmt.Println("fatal:", err)
 	// 	os.Exit(1)
