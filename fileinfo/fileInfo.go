@@ -2,6 +2,7 @@ package fileinfo
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -16,6 +17,8 @@ type FileInfo struct {
 	Name     string
 	FileType string
 	Size     int
+	Children []string
+	Checked  bool
 }
 
 var errBadDescriptor = errors.New("bad file descriptor")
@@ -125,4 +128,102 @@ func GetRootInfo(root string) ([]FileInfo, error) {
 	})
 
 	return infoList, err
+}
+
+func GenerateFileMap(m map[string]FileInfo, root string) (map[string]FileInfo, error) {
+	if m == nil {
+		m = map[string]FileInfo{}
+	}
+	f := getMapFillerFunc(m)
+
+	if walkErr := filepath.WalkDir(root, f); walkErr != nil {
+		return nil, walkErr
+	}
+
+	updateDirSizes(m, root)
+
+	return m, nil
+}
+
+func getMapFillerFunc(m map[string]FileInfo) func(path string, d fs.DirEntry, err error) error {
+	return func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return err
+		}
+
+		parent := filepath.Dir(path)
+		if fi, exists := m[parent]; exists {
+			if !fi.Checked {
+				fi.Children = append(fi.Children, path)
+				m[parent] = fi
+			}
+		}
+
+		if _, exists := m[path]; exists {
+			return filepath.SkipDir
+		}
+
+		if d.IsDir() {
+			m[path] = FileInfo{Name: path, FileType: "dir", Size: 0}
+			return nil
+		}
+
+		info, err := d.Info()
+		if err != nil {
+			if errors.Is(err, fs.ErrPermission) {
+				return nil
+			}
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		m[path] = FileInfo{Name: path, FileType: "file", Size: int(info.Size())}
+		return nil
+	}
+}
+
+func updateDirSizes(m map[string]FileInfo, root string) {
+	fi := m[root]
+	if fi.FileType == "file" {
+		fi.Checked = true
+		m[root] = fi
+	}
+	if fi.Checked {
+		return
+	}
+	for _, c := range fi.Children {
+		updateDirSizes(m, c)
+		fi.Size += m[c].Size
+	}
+	fi.Checked = true
+	m[root] = fi
+}
+
+func GetSortedDirs(m map[string]FileInfo, root string) []FileInfo {
+	list := []FileInfo{}
+
+	for _, c := range m[root].Children {
+		list = append(list, m[c])
+	}
+
+	slices.SortFunc(list, func(a, b FileInfo) int {
+		return b.Size - a.Size
+	})
+
+	return list
+}
+
+func CleanChildren(m map[string]FileInfo, dir string) {
+	delete(m, dir)
+
+	for path, fi := range m {
+		fi.Children = slices.DeleteFunc(fi.Children, func(item string) bool {
+			return item == dir
+		})
+		m[path] = fi
+	}
 }

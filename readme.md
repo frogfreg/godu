@@ -6,5 +6,8 @@ A simple CLI tool to view and delete files and directories
 
 ## TODO
 
-- add error message 
+- cleanup of unused functions
+- better handling of possible errors
 - add toggle to show/hide controls
+- possible optimizations
+- function to reload cache
