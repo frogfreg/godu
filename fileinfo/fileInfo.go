@@ -218,9 +218,13 @@ func GetSortedDirs(m map[string]FileInfo, root string) []FileInfo {
 }
 
 func CleanChildren(m map[string]FileInfo, dir string) {
+	size := m[dir].Size
 	delete(m, dir)
 
 	for path, fi := range m {
+		if slices.Contains(fi.Children, dir) {
+			fi.Size -= size
+		}
 		fi.Children = slices.DeleteFunc(fi.Children, func(item string) bool {
 			return item == dir
 		})

@@ -70,11 +70,10 @@ func TestCleanChildren(t *testing.T) {
 	}
 
 	expected := map[string]FileInfo{
-		"testfiles": {Name: "testfiles", FileType: "dir", Size: 13, Children: []string{"testfiles/file1.txt", "testfiles/file2.txt"}, Checked: true},
+		"testfiles": {Name: "testfiles", FileType: "dir", Size: 3, Children: []string{"testfiles/file1.txt", "testfiles/file2.txt"}, Checked: true},
 	}
 
 	CleanChildren(m, "testfiles/dir1")
-	t.Log(m)
 
 	if !reflect.DeepEqual(expected, m) {
 		t.Errorf("expected %v, got %v", expected, m)

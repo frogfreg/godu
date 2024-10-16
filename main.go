@@ -127,16 +127,16 @@ func (m model) updateCurrentDir(dir string, replace bool) model {
 	return m
 }
 
-func deleteCmd(m map[string]fileinfo.FileInfo, dir string) tea.Cmd {
+func deleteCmd(m map[string]fileinfo.FileInfo, path string) tea.Cmd {
 	f := func() tea.Msg {
 		var res deleteResponse
 
-		err := os.RemoveAll(dir)
+		err := os.RemoveAll(path)
 		if err != nil {
 			res.err = err
 		}
 
-		fileinfo.CleanChildren(m, dir)
+		fileinfo.CleanChildren(m, path)
 
 		return res
 	}
