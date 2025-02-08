@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -48,7 +49,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		fir := fileInfoResponse(msg)
 		if fir.err != nil {
 			m.err = fir.err
-			log.Fatalf("something went wrong: %v", m.err)
+			slog.Error("something went wrong", "error", m.err)
+			return m, tea.Quit
 		}
 		m.fileMap = fir.fileMap
 
@@ -58,7 +60,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = deleteResponse(msg).err
 
 		if m.err != nil {
-			log.Fatalf("something went wrong: %v", m.err)
+			slog.Error("something went wrong", "error", m.err)
+			return m, tea.Quit
 		}
 
 		m.loading = true
@@ -201,10 +204,9 @@ func main() {
 		table:         getInitialTable(),
 	}
 
-	// f, err := tea.LogToFile("/home/nyan/Desktop/experiments/godu/debug.log", "debug")
+	// f, err := tea.LogToFile("debug.log", "debug")
 	// if err != nil {
-	// 	fmt.Println("fatal:", err)
-	// 	os.Exit(1)
+	// 	log.Fatalf("fatal: %v", err)
 	// }
 	// defer f.Close()
 
