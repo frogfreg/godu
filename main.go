@@ -47,21 +47,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case fileInfoResponse:
 		m.loading = false
 		fir := fileInfoResponse(msg)
-		if fir.err != nil {
-			m.err = fir.err
-			slog.Error("something went wrong", "error", m.err)
-			return m, tea.Quit
+		m.err = fir.err
+		if m.err != nil {
+			slog.Error("error happened", "error", m.err, "deleting", m.deleting, "currentDir", m.currentDir, "loading", m.loading, "selectedIndex", m.selectedIndex)
+			return m, nil
 		}
+
 		m.fileMap = fir.fileMap
 
 		m.table.SetRows(fileinfo.FileInfosToRow(fir.data))
 	case deleteResponse:
 		m.deleting = false
 		m.err = deleteResponse(msg).err
-
 		if m.err != nil {
-			slog.Error("something went wrong", "error", m.err)
-			return m, tea.Quit
+			slog.Error("error happened", "error", m.err, "deleting", m.deleting, "currentDir", m.currentDir, "loading", m.loading, "selectedIndex", m.selectedIndex)
+			return m, nil
 		}
 
 		m.loading = true
@@ -72,7 +72,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc", "q", "ctrl+c":
 			return m, tea.Quit
 		case "enter", "right", "l":
+			if !m.loading && m.err != nil {
+				m.err = nil
+				return m, nil
+			}
 			sr := m.table.SelectedRow()
+
 			if !m.loading && !m.deleting && len(sr) != 0 && sr[1] == "dir" {
 				m = m.updateCurrentDir(m.table.SelectedRow()[0], false)
 				return m, getFileInfoCmd(m.fileMap, m.currentDir)
@@ -101,7 +106,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.err != nil {
-		return m.err.Error()
+		return fmt.Sprintf("%v\n\nPress enter to continue", m.err.Error())
 	}
 
 	if m.deleting {
