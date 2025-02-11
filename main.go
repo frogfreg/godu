@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -43,13 +42,13 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
 	switch msg := msg.(type) {
 	case fileInfoResponse:
 		m.loading = false
 		fir := fileInfoResponse(msg)
 		m.err = fir.err
 		if m.err != nil {
-			slog.Error("error happened", "error", m.err, "deleting", m.deleting, "currentDir", m.currentDir, "loading", m.loading, "selectedIndex", m.selectedIndex)
 			return m, nil
 		}
 
@@ -60,7 +59,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.deleting = false
 		m.err = deleteResponse(msg).err
 		if m.err != nil {
-			slog.Error("error happened", "error", m.err, "deleting", m.deleting, "currentDir", m.currentDir, "loading", m.loading, "selectedIndex", m.selectedIndex)
 			return m, nil
 		}
 
@@ -208,6 +206,8 @@ func main() {
 		selectedIndex: 0,
 		table:         getInitialTable(),
 	}
+
+	// If I slog anywhere in the model without first enabling the following code, the view gets messed up for some reason
 
 	// f, err := tea.LogToFile("debug.log", "debug")
 	// if err != nil {
