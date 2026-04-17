@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/frogfreg/godu/fileinfo"
 )
 
@@ -65,7 +65,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = true
 		return m, getFileInfoCmd(m.fileMap, m.currentDir)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc", "q", "ctrl+c":
 			return m, tea.Quit
@@ -102,17 +102,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
 	if m.err != nil {
-		return fmt.Sprintf("%v\n\nPress enter to continue", m.err.Error())
+		return tea.NewView(fmt.Sprintf("%v\n\nPress enter to continue", m.err.Error()))
 	}
 
 	if m.deleting {
-		return fmt.Sprintf("deleting %v...", m.deleteDir)
+		return tea.NewView(fmt.Sprintf("deleting %v...", m.deleteDir))
 	}
 
 	if m.loading {
-		return "Reading files..."
+		return tea.NewView("Reading files...")
 	}
 
 	viewString := "Controls:\n"
@@ -121,7 +121,7 @@ func (m model) View() string {
 	viewString += fmt.Sprintf("\nCurrent directory: %q\n", m.currentDir)
 	viewString += baseStyle.Render(m.table.View()) + "\n"
 
-	return viewString
+	return tea.NewView(viewString)
 }
 
 func (m model) updateCurrentDir(dir string, replace bool) model {

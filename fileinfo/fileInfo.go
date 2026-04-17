@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/charmbracelet/bubbles/table"
+	"charm.land/bubbles/v2/table"
 	"github.com/frogfreg/godu/utilities"
 )
 
@@ -83,9 +83,7 @@ func GetRootInfo(root string) ([]FileInfo, error) {
 	errChan := make(chan error)
 
 	for _, de := range dirEntries {
-		de := de
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			defer wg.Done()
 			name := filepath.Join(root, de.Name())
 			size, err := getSize(name)
@@ -112,7 +110,7 @@ func GetRootInfo(root string) ([]FileInfo, error) {
 				Size:     size,
 			})
 			mu.Unlock()
-		}()
+		})
 	}
 
 	for range dirEntries {
